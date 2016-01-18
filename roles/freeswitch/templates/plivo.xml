@@ -1,0 +1,15 @@
+<include>
+  <gateway name="plivo">
+  <param name="realm" value="phone.plivo.com" />
+  <param name="username" value="{{ plivo_username }}" />
+  <param name="password" value="{{ plivo_password }}" />
+  <param name="register" value="false" />
+  <param name="ping" value="5" />
+  <param name="ping-max" value="3" />
+  <param name="retry-seconds" value="5" />
+  <param name="expire-seconds" value="60" />
+  <variables>
+        <variable name="verbose_sdp" value="true"/>
+  </variables>
+  </gateway>
+</include>

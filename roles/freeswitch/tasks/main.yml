@@ -1,0 +1,5 @@
+---
+
+- name: Check ansible os family
+  include: freeswitch.yml
+  when: ansible_os_family == "Debian"

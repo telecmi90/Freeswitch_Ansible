@@ -1,0 +1,14 @@
+
+<configuration name="cdr_mongodb.conf" description="MongoDB CDR logger">
+  <settings>
+    <!-- Hostnames and IPv6 addrs not supported (yet) -->
+    <param name="host" value="{{ mongo_ip }}"/>
+    <param name="port" value="27017"/>
+
+    <!-- Namespace format is database.collection -->
+    <param name="namespace" value="{{ mongo_db }}"/>
+
+    <!-- If true, create CDR for B-leg of call (default: true) -->
+    <param name="log-b-leg" value="false"/>
+  </settings>
+</configuration>

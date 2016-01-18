@@ -1,0 +1,92 @@
+---
+
+- name: install curl
+  apt: name=curl update_cache=yes
+
+- name: Echo FreeSWITCH Dependencies <param name="host" value="{{ mongo_ip }}"/>
+  shell: echo "deb http://files.freeswitch.org/repo/deb/freeswitch-1.6/ jessie main" > /etc/apt/sources.list.d/freeswitch.list
+  
+- name: Download key
+  shell: curl http://files.freeswitch.org/repo/deb/debian/freeswitch_archive_g0.pub  | apt-key add -
+
+- name: Echo FreeSwitch
+  shell: echo "deb http://files.freeswitch.org/repo/deb/freeswitch-1.6/ jessie main" > /etc/apt/sources.list.d/freeswitch.list
+
+- name: Update cache
+  apt: update_cache=yes
+  
+- name: Install freeswitch dependencies
+  apt: name=freeswitch-video-deps-most  force=yes
+ 
+- name: Clone freeswith from github
+  git: repo=https://freeswitch.org/stash/scm/fs/freeswitch.git dest=/usr/local/src/freeswitch/ version={{fs_version}}
+  
+- name: Copy modules.conf from template
+  copy: src=../templates/modules.conf dest=/usr/local/src/freeswitch/modules.conf
+
+- name: configure and install freeswitch
+  shell: "{{ item }}"
+  with_items:
+    - ./bootstrap.sh -j
+    - ./configure --enable-core-pgsql-support
+    - make
+    - make install
+    
+  args:
+    chdir: /usr/local/src/freeswitch/
+    
+- name: Copy config file 
+  template: src="{{ item.srcfile }}" dest="{{ item.destfile }}"
+  with_items:
+   - { srcfile: '../templates/cdr_mongodb.conf.xml', destfile: '/usr/local/freeswitch/conf/autoload_configs/cdr_mongodb.conf.xml'}
+   - { srcfile: '../templates/modules.conf.xml', destfile: '/usr/local/freeswitch/conf/autoload_configs/modules.conf.xml'}
+   - { srcfile: '../templates/verto.conf.xml', destfile: '/usr/local/freeswitch/conf/autoload_configs/verto.conf.xml'}
+   - { srcfile: '../templates/xml_curl.conf.xml', destfile: '/usr/local/freeswitch/conf/autoload_configs/xml_curl.conf.xml'}
+   - { srcfile: '../templates/nibblebill.conf.xml', destfile: '/usr/local/freeswitch/conf/autoload_configs/nibblebill.conf.xml'}
+   - { srcfile: '../templates/switch.conf.xml', destfile: '/usr/local/freeswitch/conf/autoload_configs/switch.conf.xml'}
+   - { srcfile: '../templates/vars.xml', destfile: '/usr/local/freeswitch/conf/vars.xml'}
+   - { srcfile: '../templates/internal.xml', destfile: '/usr/local/freeswitch/conf/sip_profiles/internal.xml'}
+   - { srcfile: '../templates/external.xml', destfile: '/usr/local/freeswitch/conf/sip_profiles/external.xml'}
+   - { srcfile: '../templates/plivo.xml', destfile: '/usr/local/freeswitch/conf/sip_profiles/external/plivo.xml'}
+   
+- name: Add user "freeswitch"
+  user: name={{freeswitch_owner}} group={{freeswitch_group}} home=/usr/local/freeswitch/
+
+- name: Change ownership of FreeSwitch installation
+  file: path=/usr/local/freeswitch/ owner={{freeswitch_owner}} group={{freeswitch_group}} mode="ug=rwX,o=" state=directory recurse=yes
+
+- name: Change ownership of FreeSwitch binary files
+  file: path=/usr/local/freeswitch/bin/ owner={{freeswitch_owner}} group={{freeswitch_group}} mode="u=rwx,g=rx" state=directory recurse=yes
+
+- name: Create /var/lib/freeswitch
+  file: path=/var/lib/freeswitch owner={{freeswitch_owner}} group={{freeswitch_group}} mode="u=rwx,o=" state=directory recurse=yes
+   
+- name: copy init script
+  copy: src='../templates/freeswitch.init' dest=/etc/init.d/freeswitch
+  
+- name: Change ownership of FreeSwitch init script
+  file: path=/etc/init.d/freeswitch owner={{freeswitch_owner}} group={{freeswitch_group}} mode="a+x"
+  
+- name: update init scripts
+  shell: update-rc.d freeswitch defaults
+
+- name: cli link
+  file: src=/usr/local/freeswitch/bin/fs_cli dest=/bin/fs_cli state=link
+  
+- name: Check if Service Exists
+  stat: path=/etc/init.d/freeswitch
+  register: service_status
+  ignore_errors: True
+
+- name: Stop Service
+  service: name=freeswitch state=stopped
+  when: service_status.stat.exists
+  register: service_stopped
+  ignore_errors: True
+  
+- name: Start freeswitch Service
+  service: name=freeswitch state=started
+  
+   
+   
+    

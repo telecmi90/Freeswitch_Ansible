@@ -1,0 +1,17 @@
+<configuration name="xml_curl.conf" description="cURL XML Gateway">
+  <bindings>
+ <binding name="dialplan">
+      <param name="gateway-url" value="{{ fs_curl_ip }}:{{fs_curl_port}}/dialplan" bindings="dialplan"/>
+    </binding>
+
+ <binding name="directory">
+      <param name="gateway-url" value="{{ fs_curl_ip }}:{{ fs_curl_port }}/directory" bindings="directory"/>
+ </binding>
+
+ <binding name="configuration">
+      <param name="gateway-url" value="{{ fs_curl_ip }}:{{ fs_curl_port }}/configuration" bindings="configuration"/>
+    </binding>
+
+
+  </bindings>
+</configuration>

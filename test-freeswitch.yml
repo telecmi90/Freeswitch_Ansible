@@ -1,0 +1,8 @@
+---
+ - hosts: telecmi
+   sudo: True
+
+   roles:
+    - { role: freeswitch }
+
+
